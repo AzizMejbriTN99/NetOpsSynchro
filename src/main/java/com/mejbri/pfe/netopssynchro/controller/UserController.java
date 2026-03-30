@@ -9,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/users")
@@ -32,7 +33,7 @@ public class UserController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         userService.deleteUser(id);
-        return ResponseEntity.ok("User deleted");
+        return ResponseEntity.ok(Map.of("message", "User deleted"));
     }
 
     @PatchMapping("/{id}/toggle")
@@ -43,6 +44,6 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest req) {
         userService.register(req);
-        return ResponseEntity.ok("User created successfully");
+        return ResponseEntity.ok(Map.of("message", "User created successfully"));
     }
 }

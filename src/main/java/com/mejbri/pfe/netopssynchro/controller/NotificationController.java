@@ -37,13 +37,13 @@ public class NotificationController {
     @PatchMapping("/mark-all-read")
     public ResponseEntity<?> markAllRead(Authentication auth) {
         notificationService.markAllRead(extractRole(auth));
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(Map.of("message", "All notifications marked as read"));
     }
 
     @PatchMapping("/{id}/read")
     public ResponseEntity<?> markOneRead(@PathVariable Long id) {
         notificationService.markOneRead(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(Map.of("message", "Notification marked as read"));
     }
 }
 
