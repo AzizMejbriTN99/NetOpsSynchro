@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -19,5 +20,7 @@ public class UserDTO {
     private String firstname;
     private String lastname;
     private Role role;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
     private boolean enabled;
 }

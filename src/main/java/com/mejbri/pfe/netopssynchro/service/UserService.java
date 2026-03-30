@@ -76,6 +76,8 @@ public class UserService {
         dto.setUsername(u.getUsername());
         dto.setEmail(u.getEmail());
         dto.setRole(u.getRole());
+        dto.setCreatedAt(u.getCreatedAt());
+        dto.setUpdatedAt(u.getUpdatedAt());
         dto.setEnabled(u.isEnabled());
         return dto;
     }
