@@ -40,6 +40,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/notifications/**").authenticated()
+                        .requestMatchers("/api/map/**").authenticated()
+                        .requestMatchers("/api/dashboard/**").authenticated()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/consultant/**").hasRole("CONSULTANT")
                         .requestMatchers("/api/technician/**").hasRole("TECHNICIAN")

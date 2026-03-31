@@ -2,7 +2,6 @@ package com.mejbri.pfe.netopssynchro.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Entity
@@ -31,6 +30,8 @@ public class Demande {
     private String clientName;
     private String clientContact;
     private String clientLocation;
+    private Double latitude;
+    private Double longitude;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "technician_id")

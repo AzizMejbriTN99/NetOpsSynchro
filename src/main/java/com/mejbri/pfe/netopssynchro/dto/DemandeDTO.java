@@ -15,6 +15,8 @@ public class DemandeDTO {
     private String clientName;
     private String clientContact;
     private String clientLocation;
+    private Double latitude;
+    private Double longitude;
     private Long technicianId;
     private String technicianUsername;
     private String createdByUsername;

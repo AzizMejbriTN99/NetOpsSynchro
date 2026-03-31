@@ -60,4 +60,5 @@ public class DemandeController {
     public ResponseEntity<List<UserDTO>> getTechnicians() {
         return ResponseEntity.ok(demandeService.getTechnicians());
     }
+
 }
