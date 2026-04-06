@@ -8,7 +8,6 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-
 import java.util.List;
 
 @Component
@@ -29,7 +28,7 @@ public class DataSeeder implements ApplicationRunner {
         seedDemandes();
     }
 
-    // ── Users ────────────────────────────────────────────────
+
     private void seedUsers() {
         if (userRepository.existsByUsername("admin")) return;
 
@@ -73,166 +72,72 @@ public class DataSeeder implements ApplicationRunner {
                 .enabled(true)
                 .build();
 
-        userRepository.saveAll(List.of(admin, consultant, tech1, tech2, tech3));
+
+        User techMonastir = User.builder()
+                .username("tech.monastir")
+                .password(passwordEncoder.encode("tech1234"))
+                .email("tech.monastir@netops.int")
+                .role(Role.TECHNICIAN)
+                .enabled(true)
+                .build();
+
+
+        userRepository.saveAll(List.of(admin, consultant, tech1, tech2, tech3, techMonastir));
         System.out.println(">>> Users seeded");
     }
 
-    // ── Locations ────────────────────────────────────────────
+
     private void seedLocations() {
         if (locationRepo.count() > 0) return;
 
         List<AppLocation> locations = List.of(
+                // city centers with bounding boxes
+                AppLocation.builder().name("Tunis Centre").city(City.TUNIS)
+                        .type(LocationType.CITY_CENTER).latitude(36.8065).longitude(10.1815)
+                        .minLat(36.70).maxLat(36.95).minLng(10.10).maxLng(10.35).active(true).build(),
 
-                // ── city centers with bounding boxes ──
-                AppLocation.builder()
-                        .name("Tunis Centre")
-                        .city(City.TUNIS)
-                        .type(LocationType.CITY_CENTER)
-                        .latitude(36.8065).longitude(10.1815)
-                        .minLat(36.70).maxLat(36.95)
-                        .minLng(10.10).maxLng(10.35)
-                        .active(true).build(),
+                AppLocation.builder().name("Sousse Centre").city(City.SOUSSE)
+                        .type(LocationType.CITY_CENTER).latitude(35.8256).longitude(10.6369)
+                        .minLat(35.70).maxLat(35.95).minLng(10.55).maxLng(10.75).active(true).build(),
 
-                AppLocation.builder()
-                        .name("Sousse Centre")
-                        .city(City.SOUSSE)
-                        .type(LocationType.CITY_CENTER)
-                        .latitude(35.8256).longitude(10.6369)
-                        .minLat(35.70).maxLat(35.95)
-                        .minLng(10.55).maxLng(10.75)
-                        .active(true).build(),
+                AppLocation.builder().name("Kairouan Centre").city(City.KAIROUAN)
+                        .type(LocationType.CITY_CENTER).latitude(35.6784).longitude(10.0963)
+                        .minLat(35.60).maxLat(35.75).minLng(10.05).maxLng(10.20).active(true).build(),
 
-                AppLocation.builder()
-                        .name("Kairouan Centre")
-                        .city(City.KAIROUAN)
-                        .type(LocationType.CITY_CENTER)
-                        .latitude(35.6784).longitude(10.0963)
-                        .minLat(35.60).maxLat(35.75)
-                        .minLng(10.05).maxLng(10.20)
-                        .active(true).build(),
+                AppLocation.builder().name("Monastir Centre").city(City.MONASTIR)
+                        .type(LocationType.CITY_CENTER).latitude(35.7643).longitude(10.8113)
+                        .minLat(35.70).maxLat(35.82).minLng(10.75).maxLng(10.90).active(true).build(),
 
-                AppLocation.builder()
-                        .name("Monastir Centre")
-                        .city(City.MONASTIR)
-                        .type(LocationType.CITY_CENTER)
-                        .latitude(35.7643).longitude(10.8113)
-                        .minLat(35.70).maxLat(35.82)
-                        .minLng(10.75).maxLng(10.90)
-                        .active(true).build(),
+                AppLocation.builder().name("Sfax Centre").city(City.SFAX)
+                        .type(LocationType.CITY_CENTER).latitude(34.7406).longitude(10.7603)
+                        .minLat(34.65).maxLat(34.85).minLng(10.65).maxLng(10.85).active(true).build(),
 
-                AppLocation.builder()
-                        .name("Sfax Centre")
-                        .city(City.SFAX)
-                        .type(LocationType.CITY_CENTER)
-                        .latitude(34.7406).longitude(10.7603)
-                        .minLat(34.65).maxLat(34.85)
-                        .minLng(10.65).maxLng(10.85)
-                        .active(true).build(),
-
-                // ── HQ ──
-                AppLocation.builder()
-                        .name("HQ Principal - Tunis")
-                        .description("Siège social principal")
-                        .city(City.TUNIS)
-                        .type(LocationType.HQ)
-                        .latitude(36.8190).longitude(10.1658)
-                        .active(true).build(),
-
-                // ── Offices ──
-                AppLocation.builder()
-                        .name("Bureau Régional Sousse")
-                        .description("Agence régionale Sousse")
-                        .city(City.SOUSSE)
-                        .type(LocationType.OFFICE)
-                        .latitude(35.8312).longitude(10.6401)
-                        .active(true).build(),
-
-                AppLocation.builder()
-                        .name("Bureau Régional Sfax")
-                        .description("Agence régionale Sfax")
-                        .city(City.SFAX)
-                        .type(LocationType.OFFICE)
-                        .latitude(34.7450).longitude(10.7620)
-                        .active(true).build(),
-
-                AppLocation.builder()
-                        .name("Bureau Monastir")
-                        .description("Antenne Monastir")
-                        .city(City.MONASTIR)
-                        .type(LocationType.OFFICE)
-                        .latitude(35.7680).longitude(10.8090)
-                        .active(true).build(),
-
-                AppLocation.builder()
-                        .name("Bureau Kairouan")
-                        .description("Antenne Kairouan")
-                        .city(City.KAIROUAN)
-                        .type(LocationType.OFFICE)
-                        .latitude(35.6810).longitude(10.0990)
-                        .active(true).build(),
-
-                // ── Stocks ──
-                AppLocation.builder()
-                        .name("Stock Tunis Nord")
-                        .description("Dépôt matériel nord Tunis")
-                        .city(City.TUNIS)
-                        .type(LocationType.STOCK)
-                        .latitude(36.8580).longitude(10.1950)
-                        .active(true).build(),
-
-                AppLocation.builder()
-                        .name("Stock Tunis Sud")
-                        .description("Dépôt matériel sud Tunis")
-                        .city(City.TUNIS)
-                        .type(LocationType.STOCK)
-                        .latitude(36.7720).longitude(10.1730)
-                        .active(true).build(),
-
-                AppLocation.builder()
-                        .name("Stock Sousse")
-                        .description("Dépôt matériel Sousse")
-                        .city(City.SOUSSE)
-                        .type(LocationType.STOCK)
-                        .latitude(35.8150).longitude(10.6250)
-                        .active(true).build(),
-
-                AppLocation.builder()
-                        .name("Stock Sfax")
-                        .description("Dépôt matériel Sfax")
-                        .city(City.SFAX)
-                        .type(LocationType.STOCK)
-                        .latitude(34.7350).longitude(10.7500)
-                        .active(true).build(),
-
-                AppLocation.builder()
-                        .name("Stock Monastir")
-                        .description("Dépôt matériel Monastir")
-                        .city(City.MONASTIR)
-                        .type(LocationType.STOCK)
-                        .latitude(35.7700).longitude(10.8200)
-                        .active(true).build(),
-
-                AppLocation.builder()
-                        .name("Stock Kairouan")
-                        .description("Dépôt matériel Kairouan")
-                        .city(City.KAIROUAN)
-                        .type(LocationType.STOCK)
-                        .latitude(35.6750).longitude(10.0920)
-                        .active(true).build()
+                // stocks
+                AppLocation.builder().name("Stock Tunis Nord").description("Dépôt matériel nord Tunis")
+                        .city(City.TUNIS).type(LocationType.STOCK).latitude(36.8580).longitude(10.1950).active(true).build(),
+                AppLocation.builder().name("Stock Tunis Sud").description("Dépôt matériel sud Tunis")
+                        .city(City.TUNIS).type(LocationType.STOCK).latitude(36.7720).longitude(10.1730).active(true).build(),
+                AppLocation.builder().name("Stock Sousse").description("Dépôt matériel Sousse")
+                        .city(City.SOUSSE).type(LocationType.STOCK).latitude(35.8150).longitude(10.6250).active(true).build(),
+                AppLocation.builder().name("Stock Sfax").description("Dépôt matériel Sfax")
+                        .city(City.SFAX).type(LocationType.STOCK).latitude(34.7350).longitude(10.7500).active(true).build(),
+                AppLocation.builder().name("Stock Monastir").description("Dépôt matériel Monastir")
+                        .city(City.MONASTIR).type(LocationType.STOCK).latitude(35.7700).longitude(10.8200).active(true).build(),
+                AppLocation.builder().name("Stock Kairouan").description("Dépôt matériel Kairouan")
+                        .city(City.KAIROUAN).type(LocationType.STOCK).latitude(35.6750).longitude(10.0920).active(true).build()
         );
 
         locationRepo.saveAll(locations);
         System.out.println(">>> Locations seeded");
     }
 
-    // ── Demandes ─────────────────────────────────────────────
     private void seedDemandes() {
         if (demandeRepo.count() > 0) return;
 
-        User consultant = userRepository.findByUsername("consultant1").orElse(null);
-        User techTunis  = userRepository.findByUsername("tech.tunis").orElse(null);
+        User consultant = userRepository.findByUsername("cons").orElse(null);
+        User techTunis = userRepository.findByUsername("tech.tunis").orElse(null);
         User techSousse = userRepository.findByUsername("tech.sousse").orElse(null);
-        User techSfax   = userRepository.findByUsername("tech.sfax").orElse(null);
+        User techSfax = userRepository.findByUsername("tech.sfax").orElse(null);
 
         if (consultant == null) return;
 
@@ -367,14 +272,12 @@ public class DataSeeder implements ApplicationRunner {
 
         List<Demande> saved = demandeRepo.saveAll(demandes);
 
-        // ── Actions for in-progress demandes ──
-        Demande d1 = saved.get(0);  // Tunis network - techTunis
-        Demande d2 = saved.get(1);  // Sousse servers - techSousse
-        Demande d7 = saved.get(6);  // Sfax UPS - techSfax
-        Demande d10 = saved.get(9); // Monastir NAS - techSousse
+        Demande d1 = saved.get(0);
+        Demande d2 = saved.get(1);
+        Demande d7 = saved.get(6);
+        Demande d10 = saved.get(9);
 
         actionRepo.saveAll(List.of(
-                // d1 timeline — most advanced
                 DemandeAction.builder().demande(d1).status(DemandeActionStatus.TECHNICIAN_GOING_TO_SITE)
                         .note("Technicien en route depuis le dépôt nord").performedBy(techTunis).build(),
                 DemandeAction.builder().demande(d1).status(DemandeActionStatus.TECHNICIAN_AT_SITE)
@@ -383,18 +286,12 @@ public class DataSeeder implements ApplicationRunner {
                         .note("Retour au stock pour récupérer switch de remplacement").performedBy(techTunis).build(),
                 DemandeAction.builder().demande(d1).status(DemandeActionStatus.TECHNICIAN_FIXING_ISSUE)
                         .note("Remplacement du switch core défectueux en cours").performedBy(techTunis).build(),
-
-                // d2 timeline
                 DemandeAction.builder().demande(d2).status(DemandeActionStatus.TECHNICIAN_GOING_TO_SITE)
                         .note("Départ de l'agence Sousse").performedBy(techSousse).build(),
                 DemandeAction.builder().demande(d2).status(DemandeActionStatus.TECHNICIAN_AT_SITE)
                         .note("Présent en salle serveurs, début du diagnostic").performedBy(techSousse).build(),
-
-                // d7 timeline
                 DemandeAction.builder().demande(d7).status(DemandeActionStatus.TECHNICIAN_GOING_TO_SITE)
                         .note("Intervention urgente, en route").performedBy(techSfax).build(),
-
-                // d10 timeline
                 DemandeAction.builder().demande(d10).status(DemandeActionStatus.TECHNICIAN_GOING_TO_SITE)
                         .note("En route vers Monastir depuis Sousse").performedBy(techSousse).build(),
                 DemandeAction.builder().demande(d10).status(DemandeActionStatus.TECHNICIAN_AT_SITE)
@@ -403,8 +300,7 @@ public class DataSeeder implements ApplicationRunner {
                         .note("Commande du nouveau NAS en attente de livraison").performedBy(techSousse).build()
         ));
 
-        // ── Seed resolved demande actions ──
-        Demande d5 = saved.get(4); // VPN resolved
+        Demande d5 = saved.get(4);
         actionRepo.saveAll(List.of(
                 DemandeAction.builder().demande(d5).status(DemandeActionStatus.TECHNICIAN_GOING_TO_SITE)
                         .note("En route vers le client").performedBy(techTunis).build(),
@@ -416,7 +312,6 @@ public class DataSeeder implements ApplicationRunner {
                         .note("Tunnel VPN rétabli, tests de connectivité validés").performedBy(techTunis).build()
         ));
 
-        // ── Seed technician locations ──
         techLocRepo.saveAll(List.of(
                 TechnicianLocationHistory.builder()
                         .technician(techTunis)
@@ -436,4 +331,5 @@ public class DataSeeder implements ApplicationRunner {
 
         System.out.println(">>> Demandes, actions and technician locations seeded");
     }
+
 }

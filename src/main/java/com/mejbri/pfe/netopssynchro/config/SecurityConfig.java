@@ -42,6 +42,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/notifications/**").authenticated()
                         .requestMatchers("/api/map/**").authenticated()
                         .requestMatchers("/api/dashboard/**").authenticated()
+                        .requestMatchers("/api/servers/**").authenticated()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/consultant/**").hasRole("CONSULTANT")
                         .requestMatchers("/api/technician/**").hasRole("TECHNICIAN")

@@ -20,9 +20,8 @@ public class MapController {
     private final MapService mapService;
 
 
-
     @GetMapping("/technicians")
-    @PreAuthorize("hasAnyRole('CONSULTANT','ADMIN')")
+    @PreAuthorize("hasRole('CONSULTANT')")
     public ResponseEntity<List<TechnicianLocationDTO>> getTechnicianLocations(
             @RequestParam(required = false) City city) {
         return ResponseEntity.ok(mapService.getLatestTechnicianLocations(city));
@@ -39,14 +38,14 @@ public class MapController {
     }
 
     @GetMapping("/demandes")
-    @PreAuthorize("hasAnyRole('CONSULTANT','ADMIN')")
+    @PreAuthorize("hasRole('CONSULTANT')")
     public ResponseEntity<List<DemandeMapDTO>> getDemandeLocations(
             @RequestParam(required = false) City city) {
         return ResponseEntity.ok(mapService.getDemandeLocations(city));
     }
 
     @GetMapping("/locations")
-    @PreAuthorize("hasAnyRole('CONSULTANT','ADMIN')")
+    @PreAuthorize("hasRole('CONSULTANT')")
     public ResponseEntity<List<AppLocationDTO>> getLocations(
             @RequestParam(required = false) City city,
             @RequestParam(required = false) LocationType type) {
@@ -54,13 +53,13 @@ public class MapController {
     }
 
     @PostMapping("/locations")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('CONSULTANT')")
     public ResponseEntity<AppLocationDTO> createLocation(@RequestBody AppLocationDTO req) {
         return ResponseEntity.ok(mapService.createLocation(req));
     }
 
     @DeleteMapping("/locations/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('CONSULTANT')")
     public ResponseEntity<?> deleteLocation(@PathVariable Long id) {
         mapService.deleteLocation(id);
         return ResponseEntity.ok(Map.of("message", "Location deleted"));

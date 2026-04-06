@@ -57,8 +57,17 @@ public class DemandeController {
     }
 
     @GetMapping("/technicians")
-    public ResponseEntity<List<UserDTO>> getTechnicians() {
-        return ResponseEntity.ok(demandeService.getTechnicians());
+    public ResponseEntity<List<UserDTO>> getTechnicians(
+            @RequestParam(required = false) String city) {
+        return ResponseEntity.ok(demandeService.getTechniciansByCity(city));
     }
+
+    @PostMapping("/demandes/generate")
+    public ResponseEntity<DemandeDTO> generateRandom(@RequestParam String city,
+                                                     Authentication auth) {
+        return ResponseEntity.ok(demandeService.generateRandom(city, auth));
+    }
+
+
 
 }
