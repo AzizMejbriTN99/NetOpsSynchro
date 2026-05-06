@@ -2,7 +2,6 @@ package com.mejbri.pfe.netopssynchro.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Entity
@@ -27,25 +26,24 @@ public class User {
     @Column(unique = true)
     private String email;
 
+    private String firstname;
+    private String lastname;
+    private String phone;
+
+    @Column(length = 512)
+    private String fcmToken;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
 
     @Column(updatable = false)
     private LocalDateTime createdAt;
-
     private LocalDateTime updatedAt;
 
-    @PrePersist
-    public void prePersist() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
-
+    @Builder.Default
     private boolean enabled = true;
+
+    @PrePersist  public void prePersist() { createdAt = updatedAt = LocalDateTime.now(); }
+    @PreUpdate   public void preUpdate()  { updatedAt = LocalDateTime.now(); }
 }

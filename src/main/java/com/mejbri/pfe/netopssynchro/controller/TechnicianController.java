@@ -210,6 +210,56 @@ public class TechnicianController {
         return d;
     }
 
+    @PostMapping("/fcm-token")
+    public ResponseEntity<Map<String, String>> registerFcmToken(
+            @RequestBody Map<String, String> body,
+            Authentication auth) {
+        User user = getUser(auth);
+        user.setFcmToken(body.get("token"));
+        userRepo.save(user);
+        return ResponseEntity.ok(Map.of("status", "FCM token registered"));
+    }
+
+    // ── Profile ────────────────────────────────────────────────────────────────
+    @GetMapping("/profile")
+    public ResponseEntity<Map<String, Object>> getProfile(Authentication auth) {
+        User user = getUser(auth);
+        Map<String, Object> profile = new java.util.LinkedHashMap<>();
+        profile.put("username",  user.getUsername());
+        profile.put("firstname", user.getFirstname() != null ? user.getFirstname() : "");
+        profile.put("lastname",  user.getLastname()  != null ? user.getLastname()  : "");
+        profile.put("email",     user.getEmail()     != null ? user.getEmail()     : "");
+        profile.put("phone",     user.getPhone()     != null ? user.getPhone()     : "");
+        profile.put("role",      user.getRole().name());
+        return ResponseEntity.ok(profile);
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<Map<String, Object>> updateProfile(
+            @RequestBody Map<String, String> req, Authentication auth) {
+        User user = getUser(auth);
+        if (req.containsKey("firstname")) user.setFirstname(req.get("firstname"));
+        if (req.containsKey("lastname"))  user.setLastname(req.get("lastname"));
+        if (req.containsKey("email"))     user.setEmail(req.get("email"));
+        if (req.containsKey("phone"))     user.setPhone(req.get("phone"));
+        userRepo.save(user);
+        return getProfile(auth);
+    }
+
+    @PutMapping("/profile/password")
+    public ResponseEntity<Map<String, String>> changePassword(
+            @RequestBody Map<String, String> req, Authentication auth) {
+        User user = getUser(auth);
+        org.springframework.security.crypto.password.PasswordEncoder enc =
+                new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+        if (!enc.matches(req.get("currentPassword"), user.getPassword()))
+            return ResponseEntity.status(400).body(Map.of("error", "Current password is incorrect"));
+        user.setPassword(enc.encode(req.get("newPassword")));
+        userRepo.save(user);
+        return ResponseEntity.ok(Map.of("message", "Password updated"));
+    }
+}
+
     private DemandeDTO toDTO(Demande d) {
         DemandeDTO dto = new DemandeDTO();
         dto.setId(d.getId());
