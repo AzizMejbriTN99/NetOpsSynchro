@@ -258,7 +258,7 @@ public class TechnicianController {
         userRepo.save(user);
         return ResponseEntity.ok(Map.of("message", "Password updated"));
     }
-}
+
 
     private DemandeDTO toDTO(Demande d) {
         DemandeDTO dto = new DemandeDTO();

@@ -19,11 +19,12 @@ import java.util.Random;
 @RequiredArgsConstructor
 public class DemandeService {
 
-    private final DemandeRepository demandeRepository;
-    private final UserRepository userRepository;
-    private final NotificationService notificationService;
-    private final CityBoundsService cityBoundsService;
-    private final TechnicianLocationRepository technicianLocationRepository;
+    private final DemandeRepository              demandeRepository;
+    private final UserRepository                 userRepository;
+    private final NotificationService            notificationService;
+    private final PushNotificationService        pushService;
+    private final CityBoundsService              cityBoundsService;
+    private final TechnicianLocationRepository   technicianLocationRepository;
 
     public List<DemandeDTO> getAll() {
         return demandeRepository.findAllByOrderByCreatedAtDesc()
@@ -53,7 +54,7 @@ public class DemandeService {
             User tech = userRepository.findById(req.getTechnicianId())
                     .orElseThrow(() -> new RuntimeException("Technician not found"));
             demande.setTechnician(tech);
-            notificationService.push(NotificationType.TASK_ASSIGNED, tech.getUsername());
+            notifyTechnicianAssigned(tech, demande.getTitle() != null ? demande.getTitle() : "New task");
         }
 
         return toDTO(demandeRepository.save(demande));
@@ -86,13 +87,20 @@ public class DemandeService {
             boolean isNewAssignment = demande.getTechnician() == null
                     || !demande.getTechnician().getId().equals(req.getTechnicianId());
             demande.setTechnician(tech);
-            if (isNewAssignment)
-                notificationService.push(NotificationType.TASK_ASSIGNED, tech.getUsername());
+            if (isNewAssignment) {
+                notifyTechnicianAssigned(tech, demande.getTitle());
+            }
         } else {
             demande.setTechnician(null);
         }
 
         return toDTO(demandeRepository.save(demande));
+    }
+
+    /** Send both an in-app notification and an FCM push to the technician. */
+    private void notifyTechnicianAssigned(User tech, String taskTitle) {
+        notificationService.push(NotificationType.TASK_ASSIGNED, tech.getUsername());
+        pushService.sendToUser(tech, "New Task Assigned", taskTitle);
     }
 
     private City detectDemandeCity(Demande d) {
@@ -121,25 +129,16 @@ public class DemandeService {
     public List<UserDTO> getTechnicians() {
         return userRepository.findAll().stream()
                 .filter(u -> u.getRole() == Role.TECHNICIAN && u.isEnabled())
-                .map(u -> {
-                    UserDTO dto = new UserDTO();
-                    dto.setId(u.getId());
-                    dto.setUsername(u.getUsername());
-                    dto.setEmail(u.getEmail());
-                    dto.setRole(u.getRole());
-                    dto.setEnabled(u.isEnabled());
-                    return dto;
-                }).toList();
+                .map(this::toUserDTO)
+                .toList();
     }
 
     public List<UserDTO> getTechniciansByCity(String city) {
         City c = city != null ? City.valueOf(city.toUpperCase()) : null;
-
         return userRepository.findAll().stream()
                 .filter(u -> u.getRole() == Role.TECHNICIAN && u.isEnabled())
                 .filter(u -> {
                     if (c == null) return true;
-                    // check if technician's last known location is in this city
                     return technicianLocationRepository
                             .findTopByTechnicianIdOrderByRecordedAtDesc(u.getId())
                             .map(loc -> loc.getCity() == c)
@@ -174,6 +173,8 @@ public class DemandeService {
         dto.setClientName(d.getClientName());
         dto.setClientContact(d.getClientContact());
         dto.setClientLocation(d.getClientLocation());
+        dto.setLatitude(d.getLatitude());
+        dto.setLongitude(d.getLongitude());
         dto.setCreatedAt(d.getCreatedAt());
         dto.setUpdatedAt(d.getUpdatedAt());
         if (d.getTechnician() != null) {
@@ -184,6 +185,8 @@ public class DemandeService {
             dto.setCreatedByUsername(d.getCreatedBy().getUsername());
         return dto;
     }
+
+    // ── Random demande generator ───────────────────────────────────────────────
 
     private static final String[] TITLES = {
             "Panne réseau", "Maintenance serveur", "Installation firewall",
@@ -210,13 +213,12 @@ public class DemandeService {
         User creator = userRepository.findByUsername(auth.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Random rnd = new Random();
+        Random rnd   = new Random();
         String title  = TITLES[rnd.nextInt(TITLES.length)];
         String client = CLIENTS[rnd.nextInt(CLIENTS.length)];
 
-        double[][] coords = CITY_COORDS.getOrDefault(city.toUpperCase(),
-                CITY_COORDS.get("TUNIS"));
-        double[] coord = coords[rnd.nextInt(coords.length)];
+        double[][] coords = CITY_COORDS.getOrDefault(city.toUpperCase(), CITY_COORDS.get("TUNIS"));
+        double[] coord    = coords[rnd.nextInt(coords.length)];
 
         DemandePriority[] priorities = DemandePriority.values();
 
@@ -226,8 +228,7 @@ public class DemandeService {
                 .priority(priorities[rnd.nextInt(priorities.length)])
                 .status(DemandeStatus.NEW)
                 .clientName(client + " " + city)
-                .clientContact("+216 7" + rnd.nextInt(9) + " " +
-                        (100000 + rnd.nextInt(899999)))
+                .clientContact("+216 7" + rnd.nextInt(9) + " " + (100000 + rnd.nextInt(899999)))
                 .clientLocation(city + ", Tunisie")
                 .latitude(coord[0] + (rnd.nextDouble() - 0.5) * 0.01)
                 .longitude(coord[1] + (rnd.nextDouble() - 0.5) * 0.01)
@@ -235,8 +236,7 @@ public class DemandeService {
                 .build();
 
         Demande saved = demandeRepository.save(demande);
-        notificationService.push(NotificationType.TICKET_ASSIGNED,
-                "Auto-generated for " + city);
+        notificationService.push(NotificationType.TICKET_ASSIGNED, "Auto-generated for " + city);
         return toDTO(saved);
     }
 }
