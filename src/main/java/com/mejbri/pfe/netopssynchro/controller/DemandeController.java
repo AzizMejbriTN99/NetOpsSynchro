@@ -23,7 +23,7 @@ import java.util.Map;
 public class DemandeController {
 
     private final DemandeService demandeService;
-    
+
     @GetMapping("/demandes")
     public Page<DemandeDTO> getDemandes(
             @RequestParam(defaultValue = "") String search,
