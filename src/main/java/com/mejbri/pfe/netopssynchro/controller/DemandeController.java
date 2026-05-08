@@ -6,10 +6,13 @@ import com.mejbri.pfe.netopssynchro.dto.UserDTO;
 import com.mejbri.pfe.netopssynchro.entity.DemandeStatus;
 import com.mejbri.pfe.netopssynchro.service.DemandeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 import java.util.Map;
 
@@ -20,10 +23,13 @@ import java.util.Map;
 public class DemandeController {
 
     private final DemandeService demandeService;
-
+    
     @GetMapping("/demandes")
-    public ResponseEntity<List<DemandeDTO>> getAll() {
-        return ResponseEntity.ok(demandeService.getAll());
+    public Page<DemandeDTO> getDemandes(
+            @RequestParam(defaultValue = "") String search,
+            Pageable pageable
+    ) {
+        return demandeService.getDemandes(search, pageable);
     }
 
     @GetMapping("/demandes/{id}")
@@ -67,6 +73,8 @@ public class DemandeController {
                                                      Authentication auth) {
         return ResponseEntity.ok(demandeService.generateRandom(city, auth));
     }
+
+
 
 
 

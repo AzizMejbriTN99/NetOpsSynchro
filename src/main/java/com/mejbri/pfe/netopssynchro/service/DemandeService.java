@@ -8,6 +8,8 @@ import com.mejbri.pfe.netopssynchro.repository.DemandeRepository;
 import com.mejbri.pfe.netopssynchro.repository.TechnicianLocationRepository;
 import com.mejbri.pfe.netopssynchro.repository.UserRepository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -165,10 +167,6 @@ public class DemandeService {
                 .toList();
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    // ── Random demande generator ──────────────────────────────────────────────
-
     private static final java.util.Random RNG = new java.util.Random();
 
     private static final String[][] TEMPLATES = {
@@ -233,6 +231,27 @@ public class DemandeService {
                 .build();
 
         return toDTO(demandeRepository.save(demande));
+    }
+
+    public Page<DemandeDTO> getDemandes(String search, Pageable pageable) {
+
+        Page<Demande> page;
+
+        if (search == null || search.isBlank()) {
+
+            page = demandeRepository.findAll(pageable);
+
+        } else {
+
+            page = demandeRepository
+                    .findByTitleContainingIgnoreCaseOrClientNameContainingIgnoreCase(
+                            search,
+                            search,
+                            pageable
+                    );
+        }
+
+        return page.map(this::toDTO);
     }
 
     private void notifyAssigned(User tech, String title) {

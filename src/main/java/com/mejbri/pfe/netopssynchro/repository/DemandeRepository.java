@@ -3,6 +3,8 @@ package com.mejbri.pfe.netopssynchro.repository;
 import com.mejbri.pfe.netopssynchro.entity.Demande;
 import com.mejbri.pfe.netopssynchro.entity.DemandePriority;
 import com.mejbri.pfe.netopssynchro.entity.DemandeStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -33,6 +35,10 @@ public interface DemandeRepository extends JpaRepository<Demande, Long> {
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to);
 
-
+    Page<Demande> findByTitleContainingIgnoreCaseOrClientNameContainingIgnoreCase(
+            String title,
+            String clientName,
+            Pageable pageable
+    );
 
 }
