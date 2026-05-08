@@ -17,5 +17,7 @@ public class DemandeRequest {
     private String clientName;
     private String clientContact;
     private String clientLocation;
-    private Long technicianId;
+    private Long   technicianId;
+    private Double latitude;
+    private Double longitude;
 }

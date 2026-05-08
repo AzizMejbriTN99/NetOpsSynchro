@@ -12,19 +12,19 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
 public class DemandeService {
 
-    private final DemandeRepository              demandeRepository;
-    private final UserRepository                 userRepository;
-    private final NotificationService            notificationService;
-    private final PushNotificationService        pushService;
-    private final CityBoundsService              cityBoundsService;
-    private final TechnicianLocationRepository   technicianLocationRepository;
+    private final DemandeRepository            demandeRepository;
+    private final UserRepository               userRepository;
+    private final NotificationService          notificationService;
+    private final PushNotificationService      pushService;
+    private final CityBoundsService            cityBoundsService;
+    private final TechnicianLocationRepository technicianLocationRepository;
+
+    // ── Queries ───────────────────────────────────────────────────────────────
 
     public List<DemandeDTO> getAll() {
         return demandeRepository.findAllByOrderByCreatedAtDesc()
@@ -34,6 +34,8 @@ public class DemandeService {
     public DemandeDTO getById(Long id) {
         return toDTO(findOrThrow(id));
     }
+
+    // ── Create ────────────────────────────────────────────────────────────────
 
     public DemandeDTO create(DemandeRequest req, Authentication auth) {
         User creator = userRepository.findByUsername(auth.getName())
@@ -47,18 +49,23 @@ public class DemandeService {
                 .clientName(req.getClientName())
                 .clientContact(req.getClientContact())
                 .clientLocation(req.getClientLocation())
+                .latitude(req.getLatitude())
+                .longitude(req.getLongitude())
                 .createdBy(creator)
                 .build();
 
         if (req.getTechnicianId() != null) {
             User tech = userRepository.findById(req.getTechnicianId())
                     .orElseThrow(() -> new RuntimeException("Technician not found"));
+            enforceCity(demande, tech);
             demande.setTechnician(tech);
-            notifyTechnicianAssigned(tech, demande.getTitle() != null ? demande.getTitle() : "New task");
+            notifyAssigned(tech, demande.getTitle());
         }
 
         return toDTO(demandeRepository.save(demande));
     }
+
+    // ── Update ────────────────────────────────────────────────────────────────
 
     public DemandeDTO update(Long id, DemandeRequest req) {
         Demande demande = findOrThrow(id);
@@ -69,27 +76,18 @@ public class DemandeService {
         demande.setClientName(req.getClientName());
         demande.setClientContact(req.getClientContact());
         demande.setClientLocation(req.getClientLocation());
-        if (req.getStatus() != null) demande.setStatus(req.getStatus());
+        if (req.getLatitude()  != null) demande.setLatitude(req.getLatitude());
+        if (req.getLongitude() != null) demande.setLongitude(req.getLongitude());
+        if (req.getStatus()    != null) demande.setStatus(req.getStatus());
 
         if (req.getTechnicianId() != null) {
             User tech = userRepository.findById(req.getTechnicianId())
                     .orElseThrow(() -> new RuntimeException("Technician not found"));
-
-            City demandeCity = detectDemandeCity(demande);
-            City techCity    = getTechnicianCity(tech);
-
-            if (demandeCity != null && techCity != null && demandeCity != techCity) {
-                throw new RuntimeException(
-                        "Technician is in " + techCity + " but demande is in " + demandeCity +
-                                ". Cross-city assignment is not allowed.");
-            }
-
-            boolean isNewAssignment = demande.getTechnician() == null
+            enforceCity(demande, tech);
+            boolean newAssignment = demande.getTechnician() == null
                     || !demande.getTechnician().getId().equals(req.getTechnicianId());
             demande.setTechnician(tech);
-            if (isNewAssignment) {
-                notifyTechnicianAssigned(tech, demande.getTitle());
-            }
+            if (newAssignment) notifyAssigned(tech, demande.getTitle());
         } else {
             demande.setTechnician(null);
         }
@@ -97,24 +95,43 @@ public class DemandeService {
         return toDTO(demandeRepository.save(demande));
     }
 
-    /** Send both an in-app notification and an FCM push to the technician. */
-    private void notifyTechnicianAssigned(User tech, String taskTitle) {
-        notificationService.push(NotificationType.TASK_ASSIGNED, tech.getUsername());
-        pushService.sendToUser(tech, "New Task Assigned", taskTitle);
+    // ── City enforcement ──────────────────────────────────────────────────────
+
+    /**
+     * Throws if the technician's last known city does not match the demande's city.
+     * Passes silently if either side has no city information yet (no GPS recorded,
+     * or demande has no coordinates), because we can't block work on incomplete data.
+     */
+    private void enforceCity(Demande demande, User tech) {
+        City demandeCity = resolveDemandeCity(demande);
+        City techCity    = resolveTechnicianCity(tech);
+
+        if (demandeCity == null || techCity == null) {
+            // Not enough location data — allow but log
+            return;
+        }
+
+        if (demandeCity != techCity) {
+            throw new RuntimeException(
+                    "Cannot assign: technician " + tech.getUsername() +
+                    " is currently in " + techCity +
+                    " but this task is located in " + demandeCity + ".");
+        }
     }
 
-    private City detectDemandeCity(Demande d) {
-        if (d.getLatitude() != null && d.getLongitude() != null)
-            return cityBoundsService.detect(d.getLatitude(), d.getLongitude()).orElse(null);
-        return null;
+    private City resolveDemandeCity(Demande d) {
+        if (d.getLatitude() == null || d.getLongitude() == null) return null;
+        return cityBoundsService.detect(d.getLatitude(), d.getLongitude()).orElse(null);
     }
 
-    private City getTechnicianCity(User tech) {
+    private City resolveTechnicianCity(User tech) {
         return technicianLocationRepository
                 .findTopByTechnicianIdOrderByRecordedAtDesc(tech.getId())
                 .map(TechnicianLocationHistory::getCity)
                 .orElse(null);
     }
+
+    // ── Misc ─────────────────────────────────────────────────────────────────
 
     public DemandeDTO updateStatus(Long id, DemandeStatus status) {
         Demande demande = findOrThrow(id);
@@ -148,9 +165,84 @@ public class DemandeService {
                 .toList();
     }
 
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    // ── Random demande generator ──────────────────────────────────────────────
+
+    private static final java.util.Random RNG = new java.util.Random();
+
+    private static final String[][] TEMPLATES = {
+        {"Réseau instable - routeur en panne",       "Perte de connectivité signalée. Diagnostic et remplacement du routeur nécessaire."},
+        {"Coupure Internet client",                   "Le client rapporte une perte d'accès à Internet depuis ce matin. Vérifier la ligne et les équipements."},
+        {"Panne switch backbone",                     "Un switch de cœur de réseau est tombé. Impact sur plusieurs postes de travail."},
+        {"Configuration VPN entreprise",             "Mise en place d'un tunnel VPN site-à-site pour interconnecter deux agences."},
+        {"Maintenance préventive serveurs",           "Vérification RAID, mise à jour firmware, nettoyage des logs sur les serveurs de production."},
+        {"Remplacement NAS défectueux",               "NAS Synology inaccessible. Récupération des données et migration vers nouveau matériel."},
+        {"Installation firewall nouvelle agence",     "Déploiement et configuration d'un pare-feu Fortinet pour la nouvelle agence."},
+        {"Déploiement WiFi Meraki 3 étages",         "Extension de la couverture WiFi avec des bornes Cisco Meraki sur 3 niveaux."},
+        {"Audit sécurité réseau",                    "Analyse des vulnérabilités, scan de ports, rapport de conformité demandé."},
+        {"Câblage réseau nouvelle salle serveurs",   "Installation et brassage de câbles Cat6A dans la nouvelle baie serveurs."},
+    };
+
+    private static final String[] CLIENTS = {
+        "TechCorp", "BancaDigitale", "Clinique Moderne", "Centre Commercial",
+        "Hôtel Prestige", "Assurances Nationales", "Université Centrale",
+        "Usine Industrielle", "Cabinet Conseil", "Pharmacie Centrale",
+    };
+
+    private static final String[] CONTACTS = {
+        "+216 71 100 200", "+216 73 200 300", "+216 74 300 400",
+        "+216 72 400 500", "+216 75 500 600",
+    };
+
+    private static final java.util.Map<String, double[]> CITY_COORDS = java.util.Map.of(
+        "TUNIS",    new double[]{36.8190, 10.1658},
+        "SOUSSE",   new double[]{35.8256, 10.6369},
+        "SFAX",     new double[]{34.7406, 10.7603},
+        "MONASTIR", new double[]{35.7643, 10.8113},
+        "KAIROUAN", new double[]{35.6781, 10.0963}
+    );
+
+    public DemandeDTO generateRandom(String city, Authentication auth) {
+        User creator = userRepository.findByUsername(auth.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String cityKey   = city.toUpperCase();
+        double[] center  = CITY_COORDS.getOrDefault(cityKey, CITY_COORDS.get("TUNIS"));
+        double   spread  = 0.025;
+        double   lat     = center[0] + (RNG.nextDouble() - 0.5) * spread;
+        double   lon     = center[1] + (RNG.nextDouble() - 0.5) * spread;
+
+        String[] tpl    = TEMPLATES[RNG.nextInt(TEMPLATES.length)];
+        String   client = CLIENTS[RNG.nextInt(CLIENTS.length)] + " " + cityKey;
+        String   phone  = CONTACTS[RNG.nextInt(CONTACTS.length)];
+
+        DemandePriority[] priorities = DemandePriority.values();
+
+        Demande demande = Demande.builder()
+                .title(tpl[0] + " — " + cityKey)
+                .description(tpl[1])
+                .priority(priorities[RNG.nextInt(priorities.length)])
+                .status(DemandeStatus.NEW)
+                .clientName(client)
+                .clientContact(phone)
+                .clientLocation(cityKey + ", Tunisie")
+                .latitude(lat)
+                .longitude(lon)
+                .createdBy(creator)
+                .build();
+
+        return toDTO(demandeRepository.save(demande));
+    }
+
+    private void notifyAssigned(User tech, String title) {
+        notificationService.push(NotificationType.TASK_ASSIGNED, tech.getUsername());
+        pushService.sendToUser(tech, "New Task Assigned", title);
+    }
+
     private Demande findOrThrow(Long id) {
         return demandeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Demande not found"));
+                .orElseThrow(() -> new RuntimeException("Demande not found: " + id));
     }
 
     private UserDTO toUserDTO(User u) {
@@ -184,59 +276,5 @@ public class DemandeService {
         if (d.getCreatedBy() != null)
             dto.setCreatedByUsername(d.getCreatedBy().getUsername());
         return dto;
-    }
-
-    // ── Random demande generator ───────────────────────────────────────────────
-
-    private static final String[] TITLES = {
-            "Panne réseau", "Maintenance serveur", "Installation firewall",
-            "Câblage réseau", "Dépannage VPN", "Configuration WiFi",
-            "Audit sécurité", "Remplacement switch", "Panne onduleur",
-            "Migration données", "Installation NAS", "Dépannage DNS"
-    };
-
-    private static final String[] CLIENTS = {
-            "Société Tunisienne Tech", "Cabinet Conseil Digital", "Hôtel Grand Tunis",
-            "Clinique Moderne", "Banque Régionale", "Assurances Nationales",
-            "Université Centrale", "Centre Commercial", "Usine Industrielle", "Pharmacie Centrale"
-    };
-
-    private static final Map<String, double[][]> CITY_COORDS = Map.of(
-            "TUNIS",    new double[][]{{36.81, 10.18}, {36.83, 10.22}, {36.79, 10.17}},
-            "SOUSSE",   new double[][]{{35.82, 10.63}, {35.83, 10.64}, {35.81, 10.62}},
-            "SFAX",     new double[][]{{34.74, 10.76}, {34.75, 10.77}, {34.73, 10.75}},
-            "MONASTIR", new double[][]{{35.76, 10.81}, {35.77, 10.82}, {35.75, 10.80}},
-            "KAIROUAN", new double[][]{{35.68, 10.09}, {35.69, 10.10}, {35.67, 10.08}}
-    );
-
-    public DemandeDTO generateRandom(String city, Authentication auth) {
-        User creator = userRepository.findByUsername(auth.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Random rnd   = new Random();
-        String title  = TITLES[rnd.nextInt(TITLES.length)];
-        String client = CLIENTS[rnd.nextInt(CLIENTS.length)];
-
-        double[][] coords = CITY_COORDS.getOrDefault(city.toUpperCase(), CITY_COORDS.get("TUNIS"));
-        double[] coord    = coords[rnd.nextInt(coords.length)];
-
-        DemandePriority[] priorities = DemandePriority.values();
-
-        Demande demande = Demande.builder()
-                .title(title + " - " + city)
-                .description("Demande générée automatiquement pour simulation.")
-                .priority(priorities[rnd.nextInt(priorities.length)])
-                .status(DemandeStatus.NEW)
-                .clientName(client + " " + city)
-                .clientContact("+216 7" + rnd.nextInt(9) + " " + (100000 + rnd.nextInt(899999)))
-                .clientLocation(city + ", Tunisie")
-                .latitude(coord[0] + (rnd.nextDouble() - 0.5) * 0.01)
-                .longitude(coord[1] + (rnd.nextDouble() - 0.5) * 0.01)
-                .createdBy(creator)
-                .build();
-
-        Demande saved = demandeRepository.save(demande);
-        notificationService.push(NotificationType.TICKET_ASSIGNED, "Auto-generated for " + city);
-        return toDTO(saved);
     }
 }
