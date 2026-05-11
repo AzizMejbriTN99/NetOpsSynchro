@@ -17,7 +17,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final NotificationService notificationService; // add this
+    private final NotificationService notificationService;
 
     public User register(RegisterRequest req) {
         if (userRepository.existsByUsername(req.getUsername()))
