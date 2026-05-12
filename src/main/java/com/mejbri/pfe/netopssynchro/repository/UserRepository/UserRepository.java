@@ -1,8 +1,11 @@
 package com.mejbri.pfe.netopssynchro.repository.UserRepository;
 
+import com.mejbri.pfe.netopssynchro.dto.ProfileUpdateRequest;
 import com.mejbri.pfe.netopssynchro.entity.Role;
 import com.mejbri.pfe.netopssynchro.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Map;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -10,4 +13,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
     long countByRole(Role role);
+
 }

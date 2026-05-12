@@ -3,6 +3,7 @@ package com.mejbri.pfe.netopssynchro.controller;
 import com.mejbri.pfe.netopssynchro.config.JwtService;
 import com.mejbri.pfe.netopssynchro.dto.LoginRequest;
 import com.mejbri.pfe.netopssynchro.dto.LoginResponse;
+import com.mejbri.pfe.netopssynchro.dto.ProfileUpdateRequest;
 import com.mejbri.pfe.netopssynchro.dto.RegisterRequest;
 import com.mejbri.pfe.netopssynchro.entity.LoginEvent;
 import com.mejbri.pfe.netopssynchro.entity.User;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,6 +29,7 @@ public class AuthController {
     private final UserDetailsService userDetailsService;
     private final UserRepository userRepository;
     private final LoginEventRepository loginEventRepository;
+    private final UserService userService;
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest req) {
@@ -45,6 +48,16 @@ public class AuthController {
                 .build());
 
         return ResponseEntity.ok(new LoginResponse(token, roleStr, userDetails.getUsername()));
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateProfile(
+            @RequestBody ProfileUpdateRequest request,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(
+                userService.updateProfile(authentication.getName(), request)
+        );
     }
 
 }

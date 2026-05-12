@@ -1,11 +1,13 @@
 package com.mejbri.pfe.netopssynchro.controller;
 
+import com.mejbri.pfe.netopssynchro.dto.ProfileUpdateRequest;
 import com.mejbri.pfe.netopssynchro.dto.RegisterRequest;
 import com.mejbri.pfe.netopssynchro.dto.UserDTO;
 import com.mejbri.pfe.netopssynchro.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,6 +31,8 @@ public class UserController {
                                           @RequestBody RegisterRequest req) {
         return ResponseEntity.ok(userService.updateUser(id, req));
     }
+
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {

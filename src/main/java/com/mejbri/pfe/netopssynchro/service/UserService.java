@@ -1,5 +1,6 @@
 package com.mejbri.pfe.netopssynchro.service;
 
+import com.mejbri.pfe.netopssynchro.dto.ProfileUpdateRequest;
 import com.mejbri.pfe.netopssynchro.dto.RegisterRequest;
 import com.mejbri.pfe.netopssynchro.dto.UserDTO;
 import com.mejbri.pfe.netopssynchro.entity.NotificationType;
@@ -10,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -52,6 +54,56 @@ public class UserService {
         UserDTO dto = toDTO(userRepository.save(user));
         notificationService.push(NotificationType.USER_UPDATED, user.getUsername());
         return dto;
+    }
+
+
+    public Map<String, String> updateProfile(
+            String username,
+            ProfileUpdateRequest request
+    ) {
+
+        User user = userRepository
+                .findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (request.getEmail() != null &&
+                !request.getEmail().isBlank()) {
+
+            user.setEmail(request.getEmail());
+        }
+
+        if (request.getPhone() != null &&
+                !request.getPhone().isBlank()) {
+
+            user.setPhone(request.getPhone());
+        }
+
+        boolean wantsPasswordChange =
+                request.getNewPassword() != null &&
+                        !request.getNewPassword().isBlank();
+
+        if (wantsPasswordChange) {
+
+            if (request.getCurrentPassword() == null ||
+                    !passwordEncoder.matches(
+                            request.getCurrentPassword(),
+                            user.getPassword()
+                    )) {
+
+                throw new RuntimeException("Current password is incorrect");
+            }
+
+            user.setPassword(
+                    passwordEncoder.encode(request.getNewPassword())
+            );
+        }
+
+        userRepository.save(user);
+
+        return Map.of(
+                "message",
+                "Profile updated successfully"
+        );
     }
 
     public void deleteUser(Long id) {
