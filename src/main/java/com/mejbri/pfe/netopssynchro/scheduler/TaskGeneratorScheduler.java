@@ -25,40 +25,40 @@ public class TaskGeneratorScheduler {
     // ── Task data pools ───────────────────────────────────────────────────────
 
     private static final String[][] TEMPLATES = {
-        {"Réseau instable - routeur en panne",           "Perte de connectivité signalée. Diagnostic et remplacement du routeur nécessaire."},
-        {"Coupure Internet client",                       "Le client rapporte une perte d'accès à Internet depuis ce matin. Vérifier la ligne et les équipements."},
-        {"Panne switch backbone",                         "Un switch de cœur de réseau est tombé. Impact sur plusieurs postes de travail."},
-        {"Configuration VPN entreprise",                 "Mise en place d'un tunnel VPN site-à-site pour interconnecter deux agences."},
-        {"Maintenance préventive serveurs",               "Vérification RAID, mise à jour firmware, nettoyage des logs sur les serveurs de production."},
-        {"Remplacement NAS défectueux",                   "NAS Synology inaccessible. Récupération des données et migration vers nouveau matériel."},
-        {"Installation firewall nouvelle agence",         "Déploiement et configuration d'un pare-feu Fortinet pour la nouvelle agence."},
-        {"Déploiement WiFi Meraki 3 étages",             "Extension de la couverture WiFi avec des bornes Cisco Meraki sur 3 niveaux."},
-        {"Audit sécurité réseau",                        "Analyse des vulnérabilités, scan de ports, rapport de conformité demandé."},
-        {"Câblage réseau nouvelle salle serveurs",       "Installation et brassage de câbles Cat6A dans la nouvelle baie serveurs."},
-        {"Dépannage DNS résolution échouée",             "Les postes clients ne résolvent plus les noms de domaine internes."},
-        {"Remplacement onduleur salle machine",          "L'onduleur APC en fin de vie doit être remplacé avant la prochaine coupure EDF."},
-        {"Migration VLAN nouvelle infrastructure",       "Reconfiguration des VLANs suite à une restructuration de l'architecture réseau."},
-        {"Panne fibre optique inter-sites",              "La liaison fibre entre le siège et l'entrepôt est coupée. Intervention urgente."},
-        {"Installation NVR vidéosurveillance",           "Mise en place d'un système de vidéosurveillance IP avec enregistrement centralisé."},
-        {"Dépannage imprimante réseau",                  "L'imprimante réseau partagée est inaccessible depuis les postes du service RH."},
-        {"Configuration QoS pour VoIP",                  "Priorisation du trafic voix sur IP pour garantir la qualité des appels."},
-        {"Mise à jour firmware équipements réseau",      "Déploiement des dernières versions de firmware sur les switchs et routeurs."},
-        {"Remplacement baie de brassage",                "La baie de brassage principale est saturée. Remplacement par un modèle 48 ports."},
-        {"Diagnostic pannes intermittentes",             "Des coupures réseau aléatoires surviennent sans cause identifiée. Investigation requise."},
+            {"Réseau instable - routeur en panne",           "Perte de connectivité signalée. Diagnostic et remplacement du routeur nécessaire."},
+            {"Coupure Internet client",                       "Le client rapporte une perte d'accès à Internet depuis ce matin. Vérifier la ligne et les équipements."},
+            {"Panne switch backbone",                         "Un switch de cœur de réseau est tombé. Impact sur plusieurs postes de travail."},
+            {"Configuration VPN entreprise",                 "Mise en place d'un tunnel VPN site-à-site pour interconnecter deux agences."},
+            {"Maintenance préventive serveurs",               "Vérification RAID, mise à jour firmware, nettoyage des logs sur les serveurs de production."},
+            {"Remplacement NAS défectueux",                   "NAS Synology inaccessible. Récupération des données et migration vers nouveau matériel."},
+            {"Installation firewall nouvelle agence",         "Déploiement et configuration d'un pare-feu Fortinet pour la nouvelle agence."},
+            {"Déploiement WiFi Meraki 3 étages",             "Extension de la couverture WiFi avec des bornes Cisco Meraki sur 3 niveaux."},
+            {"Audit sécurité réseau",                        "Analyse des vulnérabilités, scan de ports, rapport de conformité demandé."},
+            {"Câblage réseau nouvelle salle serveurs",       "Installation et brassage de câbles Cat6A dans la nouvelle baie serveurs."},
+            {"Dépannage DNS résolution échouée",             "Les postes clients ne résolvent plus les noms de domaine internes."},
+            {"Remplacement onduleur salle machine",          "L'onduleur APC en fin de vie doit être remplacé avant la prochaine coupure EDF."},
+            {"Migration VLAN nouvelle infrastructure",       "Reconfiguration des VLANs suite à une restructuration de l'architecture réseau."},
+            {"Panne fibre optique inter-sites",              "La liaison fibre entre le siège et l'entrepôt est coupée. Intervention urgente."},
+            {"Installation NVR vidéosurveillance",           "Mise en place d'un système de vidéosurveillance IP avec enregistrement centralisé."},
+            {"Dépannage imprimante réseau",                  "L'imprimante réseau partagée est inaccessible depuis les postes du service RH."},
+            {"Configuration QoS pour VoIP",                  "Priorisation du trafic voix sur IP pour garantir la qualité des appels."},
+            {"Mise à jour firmware équipements réseau",      "Déploiement des dernières versions de firmware sur les switchs et routeurs."},
+            {"Remplacement baie de brassage",                "La baie de brassage principale est saturée. Remplacement par un modèle 48 ports."},
+            {"Diagnostic pannes intermittentes",             "Des coupures réseau aléatoires surviennent sans cause identifiée. Investigation requise."},
     };
 
     private static final String[] CLIENTS = {
-        "TechCorp", "BancaDigitale", "Clinique Moderne", "Centre Commercial",
-        "Hôtel Prestige", "Assurances Nationales", "Université Centrale",
-        "Usine Industrielle", "Cabinet Conseil", "Pharmacie Centrale",
-        "Studio Production", "Agence Immobilière", "Réseau GMS", "Data Center Pro",
-        "Ministère Numérique",
+            "TechCorp", "BancaDigitale", "Clinique Moderne", "Centre Commercial",
+            "Hôtel Prestige", "Assurances Nationales", "Université Centrale",
+            "Usine Industrielle", "Cabinet Conseil", "Pharmacie Centrale",
+            "Studio Production", "Agence Immobilière", "Réseau GMS", "Data Center Pro",
+            "Ministère Numérique",
     };
 
     private static final String[] CONTACTS = {
-        "+216 71 100 200", "+216 73 200 300", "+216 74 300 400",
-        "+216 72 400 500", "+216 75 500 600", "+216 76 600 700",
-        "+216 70 700 800", "+216 71 800 900", "+216 73 900 100",
+            "+216 71 100 200", "+216 73 200 300", "+216 74 300 400",
+            "+216 72 400 500", "+216 75 500 600", "+216 76 600 700",
+            "+216 70 700 800", "+216 71 800 900", "+216 73 900 100",
     };
 
     // ── Scheduler ─────────────────────────────────────────────────────────────
@@ -70,9 +70,17 @@ public class TaskGeneratorScheduler {
      * Override the interval in application.properties:
      *   task.generator.cron=0 *\/2 * * * *
      */
+    private static final long MAX_UNASSIGNED_NEW = 50;
+
     @Scheduled(cron = "${task.generator.cron:0 */2 * * * *}")
     public void generate() {
         try {
+            long unassignedNew = demandeRepository
+                    .countByStatusAndTechnicianIsNull(DemandeStatus.NEW);
+            if (unassignedNew >= MAX_UNASSIGNED_NEW) {
+                log.info("Task generator paused — {} unassigned NEW demandes already queued.", unassignedNew);
+                return;
+            }
             Demande demande = buildDemande();
             demandeRepository.save(demande);
             log.info("Auto-generated task [{}] in city {}  →  {}",
@@ -163,7 +171,7 @@ public class TaskGeneratorScheduler {
         for (AppLocation loc : locationRepository.findByTypeAndActiveTrue(LocationType.CITY_CENTER)) {
             if (loc.getMinLat() == null) continue;
             if (d.getLatitude()  >= loc.getMinLat() && d.getLatitude()  <= loc.getMaxLat()
-             && d.getLongitude() >= loc.getMinLng() && d.getLongitude() <= loc.getMaxLng())
+                    && d.getLongitude() >= loc.getMinLng() && d.getLongitude() <= loc.getMaxLng())
                 return loc.getCity().name();
         }
         return "?";

@@ -14,9 +14,14 @@ import java.util.List;
 
 public interface DemandeRepository extends JpaRepository<Demande, Long> {
     List<Demande> findAllByOrderByCreatedAtDesc();
+
     List<Demande> findByStatus(DemandeStatus status);
+
     List<Demande> findByTechnicianId(Long technicianId);
+
     List<Demande> findByPriority(DemandePriority priority);
+
+    long countByStatusAndTechnicianIsNull(DemandeStatus status);
 
     @Query("SELECT d FROM Demande d WHERE d.createdAt BETWEEN :from AND :to")
     List<Demande> findByCreatedAtBetween(
@@ -38,6 +43,40 @@ public interface DemandeRepository extends JpaRepository<Demande, Long> {
     Page<Demande> findByTitleContainingIgnoreCaseOrClientNameContainingIgnoreCase(
             String title,
             String clientName,
+            Pageable pageable
+    );
+
+    Page<Demande> findByStatus(
+            DemandeStatus status,
+            Pageable pageable
+    );
+
+    long countByStatus(DemandeStatus status);
+
+    @Query("""
+            SELECT d FROM Demande d
+            WHERE
+            LOWER(d.title) LIKE LOWER(CONCAT('%', :search, '%'))
+            OR LOWER(d.clientName) LIKE LOWER(CONCAT('%', :search, '%'))
+            OR LOWER(d.clientLocation) LIKE LOWER(CONCAT('%', :search, '%'))
+            """)
+    Page<Demande> findBySearch(
+            @Param("search") String search,
+            Pageable pageable
+    );
+
+    @Query("""
+            SELECT d FROM Demande d
+            WHERE d.status = :status
+            AND (
+            LOWER(d.title) LIKE LOWER(CONCAT('%', :search, '%'))
+            OR LOWER(d.clientName) LIKE LOWER(CONCAT('%', :search, '%'))
+            OR LOWER(d.clientLocation) LIKE LOWER(CONCAT('%', :search, '%'))
+            )
+            """)
+    Page<Demande> findByStatusAndSearch(
+            @Param("status") DemandeStatus status,
+            @Param("search") String search,
             Pageable pageable
     );
 

@@ -13,7 +13,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -233,25 +235,71 @@ public class DemandeService {
         return toDTO(demandeRepository.save(demande));
     }
 
-    public Page<DemandeDTO> getDemandes(String search, Pageable pageable) {
+    public Map<String, Object> getDemandes(
+            String search,
+            DemandeStatus status,
+            Pageable pageable
+    ) {
 
         Page<Demande> page;
 
-        if (search == null || search.isBlank()) {
+        boolean hasSearch =
+                search != null && !search.isBlank();
 
-            page = demandeRepository.findAll(pageable);
+        if (hasSearch && status != null) {
+
+            page = demandeRepository
+                    .findByStatusAndSearch(
+                            status,
+                            search.toLowerCase(),
+                            pageable
+                    );
+
+        } else if (hasSearch) {
+
+            page = demandeRepository
+                    .findBySearch(
+                            search.toLowerCase(),
+                            pageable
+                    );
+
+        } else if (status != null) {
+
+            page = demandeRepository
+                    .findByStatus(
+                            status,
+                            pageable
+                    );
 
         } else {
 
-            page = demandeRepository
-                    .findByTitleContainingIgnoreCaseOrClientNameContainingIgnoreCase(
-                            search,
-                            search,
-                            pageable
-                    );
+            page = demandeRepository.findAll(pageable);
+
         }
 
-        return page.map(this::toDTO);
+        Map<String, Long> counts = new HashMap<>();
+
+        for (DemandeStatus s : DemandeStatus.values()) {
+
+            counts.put(
+                    s.name(),
+                    demandeRepository.countByStatus(s)
+            );
+
+        }
+
+        return Map.of(
+                "content",
+                page.map(this::toDTO).getContent(),
+                "totalPages",
+                page.getTotalPages(),
+                "totalElements",
+                page.getTotalElements(),
+                "number",
+                page.getNumber(),
+                "counts",
+                counts
+        );
     }
 
     private void notifyAssigned(User tech, String title) {

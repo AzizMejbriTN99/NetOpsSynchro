@@ -25,11 +25,15 @@ public class DemandeController {
     private final DemandeService demandeService;
 
     @GetMapping("/demandes")
-    public Page<DemandeDTO> getDemandes(
+    public ResponseEntity<Map<String, Object>> getDemandes(
             @RequestParam(defaultValue = "") String search,
+            @RequestParam(required = false) DemandeStatus status,
             Pageable pageable
     ) {
-        return demandeService.getDemandes(search, pageable);
+
+        return ResponseEntity.ok(
+                demandeService.getDemandes(search, status, pageable)
+        );
     }
 
     @GetMapping("/demandes/{id}")
@@ -73,9 +77,6 @@ public class DemandeController {
                                                      Authentication auth) {
         return ResponseEntity.ok(demandeService.generateRandom(city, auth));
     }
-
-
-
 
 
 }
