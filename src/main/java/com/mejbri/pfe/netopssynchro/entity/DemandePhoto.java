@@ -20,8 +20,12 @@ public class DemandePhoto {
     private Demande demande;
 
     private String filename;
-    private String storagePath;
+    private String contentType;
     private String uploadedBy;
+
+    @Lob
+    @Column(name = "data", columnDefinition = "LONGBLOB")
+    private byte[] data;
 
     private LocalDateTime uploadedAt;
 

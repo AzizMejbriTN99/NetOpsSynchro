@@ -12,7 +12,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +27,6 @@ public class DemandeService {
     private final CityBoundsService            cityBoundsService;
     private final TechnicianLocationRepository technicianLocationRepository;
 
-    // ── Queries ───────────────────────────────────────────────────────────────
 
     public List<DemandeDTO> getAll() {
         return demandeRepository.findAllByOrderByCreatedAtDesc()
@@ -39,7 +37,9 @@ public class DemandeService {
         return toDTO(findOrThrow(id));
     }
 
-    // ── Create ────────────────────────────────────────────────────────────────
+    public Demande getRawDemande(Long id) {
+        return findOrThrow(id);
+    }
 
     public DemandeDTO create(DemandeRequest req, Authentication auth) {
         User creator = userRepository.findByUsername(auth.getName())
@@ -69,8 +69,6 @@ public class DemandeService {
         return toDTO(demandeRepository.save(demande));
     }
 
-    // ── Update ────────────────────────────────────────────────────────────────
-
     public DemandeDTO update(Long id, DemandeRequest req) {
         Demande demande = findOrThrow(id);
 
@@ -99,27 +97,19 @@ public class DemandeService {
         return toDTO(demandeRepository.save(demande));
     }
 
-    // ── City enforcement ──────────────────────────────────────────────────────
-
-    /**
-     * Throws if the technician's last known city does not match the demande's city.
-     * Passes silently if either side has no city information yet (no GPS recorded,
-     * or demande has no coordinates), because we can't block work on incomplete data.
-     */
     private void enforceCity(Demande demande, User tech) {
         City demandeCity = resolveDemandeCity(demande);
         City techCity    = resolveTechnicianCity(tech);
 
         if (demandeCity == null || techCity == null) {
-            // Not enough location data — allow but log
             return;
         }
 
         if (demandeCity != techCity) {
             throw new RuntimeException(
                     "Cannot assign: technician " + tech.getUsername() +
-                    " is currently in " + techCity +
-                    " but this task is located in " + demandeCity + ".");
+                            " is currently in " + techCity +
+                            " but this task is located in " + demandeCity + ".");
         }
     }
 
@@ -134,8 +124,6 @@ public class DemandeService {
                 .map(TechnicianLocationHistory::getCity)
                 .orElse(null);
     }
-
-    // ── Misc ─────────────────────────────────────────────────────────────────
 
     public DemandeDTO updateStatus(Long id, DemandeStatus status) {
         Demande demande = findOrThrow(id);
@@ -172,35 +160,35 @@ public class DemandeService {
     private static final java.util.Random RNG = new java.util.Random();
 
     private static final String[][] TEMPLATES = {
-        {"Réseau instable - routeur en panne",       "Perte de connectivité signalée. Diagnostic et remplacement du routeur nécessaire."},
-        {"Coupure Internet client",                   "Le client rapporte une perte d'accès à Internet depuis ce matin. Vérifier la ligne et les équipements."},
-        {"Panne switch backbone",                     "Un switch de cœur de réseau est tombé. Impact sur plusieurs postes de travail."},
-        {"Configuration VPN entreprise",             "Mise en place d'un tunnel VPN site-à-site pour interconnecter deux agences."},
-        {"Maintenance préventive serveurs",           "Vérification RAID, mise à jour firmware, nettoyage des logs sur les serveurs de production."},
-        {"Remplacement NAS défectueux",               "NAS Synology inaccessible. Récupération des données et migration vers nouveau matériel."},
-        {"Installation firewall nouvelle agence",     "Déploiement et configuration d'un pare-feu Fortinet pour la nouvelle agence."},
-        {"Déploiement WiFi Meraki 3 étages",         "Extension de la couverture WiFi avec des bornes Cisco Meraki sur 3 niveaux."},
-        {"Audit sécurité réseau",                    "Analyse des vulnérabilités, scan de ports, rapport de conformité demandé."},
-        {"Câblage réseau nouvelle salle serveurs",   "Installation et brassage de câbles Cat6A dans la nouvelle baie serveurs."},
+            {"Réseau instable - routeur en panne",     "Perte de connectivité signalée. Diagnostic et remplacement du routeur nécessaire."},
+            {"Coupure Internet client",                "Le client rapporte une perte d'accès à Internet depuis ce matin. Vérifier la ligne et les équipements."},
+            {"Panne switch backbone",                  "Un switch de cœur de réseau est tombé. Impact sur plusieurs postes de travail."},
+            {"Configuration VPN entreprise",           "Mise en place d'un tunnel VPN site-à-site pour interconnecter deux agences."},
+            {"Maintenance préventive serveurs",        "Vérification RAID, mise à jour firmware, nettoyage des logs sur les serveurs de production."},
+            {"Remplacement NAS défectueux",            "NAS Synology inaccessible. Récupération des données et migration vers nouveau matériel."},
+            {"Installation firewall nouvelle agence",  "Déploiement et configuration d'un pare-feu Fortinet pour la nouvelle agence."},
+            {"Déploiement WiFi Meraki 3 étages",       "Extension de la couverture WiFi avec des bornes Cisco Meraki sur 3 niveaux."},
+            {"Audit sécurité réseau",                  "Analyse des vulnérabilités, scan de ports, rapport de conformité demandé."},
+            {"Câblage réseau nouvelle salle serveurs", "Installation et brassage de câbles Cat6A dans la nouvelle baie serveurs."},
     };
 
     private static final String[] CLIENTS = {
-        "TechCorp", "BancaDigitale", "Clinique Moderne", "Centre Commercial",
-        "Hôtel Prestige", "Assurances Nationales", "Université Centrale",
-        "Usine Industrielle", "Cabinet Conseil", "Pharmacie Centrale",
+            "TechCorp", "BancaDigitale", "Clinique Moderne", "Centre Commercial",
+            "Hôtel Prestige", "Assurances Nationales", "Université Centrale",
+            "Usine Industrielle", "Cabinet Conseil", "Pharmacie Centrale",
     };
 
     private static final String[] CONTACTS = {
-        "+216 71 100 200", "+216 73 200 300", "+216 74 300 400",
-        "+216 72 400 500", "+216 75 500 600",
+            "+216 71 100 200", "+216 73 200 300", "+216 74 300 400",
+            "+216 72 400 500", "+216 75 500 600",
     };
 
     private static final java.util.Map<String, double[]> CITY_COORDS = java.util.Map.of(
-        "TUNIS",    new double[]{36.8190, 10.1658},
-        "SOUSSE",   new double[]{35.8256, 10.6369},
-        "SFAX",     new double[]{34.7406, 10.7603},
-        "MONASTIR", new double[]{35.7643, 10.8113},
-        "KAIROUAN", new double[]{35.6781, 10.0963}
+            "TUNIS",    new double[]{36.8190, 10.1658},
+            "SOUSSE",   new double[]{35.8256, 10.6369},
+            "SFAX",     new double[]{34.7406, 10.7603},
+            "MONASTIR", new double[]{35.7643, 10.8113},
+            "KAIROUAN", new double[]{35.6781, 10.0963}
     );
 
     public DemandeDTO generateRandom(String city, Authentication auth) {
@@ -247,7 +235,6 @@ public class DemandeService {
                 search != null && !search.isBlank();
 
         if (hasSearch && status != null) {
-
             page = demandeRepository
                     .findByStatusAndSearch(
                             status,
@@ -256,7 +243,6 @@ public class DemandeService {
                     );
 
         } else if (hasSearch) {
-
             page = demandeRepository
                     .findBySearch(
                             search.toLowerCase(),
@@ -264,13 +250,7 @@ public class DemandeService {
                     );
 
         } else if (status != null) {
-
-            page = demandeRepository
-                    .findByStatus(
-                            status,
-                            pageable
-                    );
-
+            page = demandeRepository.findByStatus(status, pageable);
         } else {
 
             page = demandeRepository.findAll(pageable);

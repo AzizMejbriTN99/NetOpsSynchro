@@ -1,5 +1,6 @@
 package com.mejbri.pfe.netopssynchro.dto;
 
+import com.mejbri.pfe.netopssynchro.entity.City;
 import com.mejbri.pfe.netopssynchro.entity.Role;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -19,6 +20,8 @@ public class UserDTO {
     private String email;
     private String firstname;
     private String lastname;
+    private String phone;
+    private City city;
     private Role role;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

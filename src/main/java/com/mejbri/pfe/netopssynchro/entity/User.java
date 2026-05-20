@@ -30,6 +30,9 @@ public class User {
     private String lastname;
     private String phone;
 
+    @Enumerated(EnumType.STRING)
+    private City city;
+
     @Column(length = 512)
     private String fcmToken;
 

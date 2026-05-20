@@ -31,6 +31,10 @@ public class UserService {
                 .username(req.getUsername())
                 .password(passwordEncoder.encode(req.getPassword()))
                 .email(req.getEmail())
+                .firstname(req.getFirstname())
+                .lastname(req.getLastname())
+                .phone(req.getPhone())
+                .city(req.getCity())
                 .role(req.getRole())
                 .enabled(true)
                 .build();
@@ -48,6 +52,10 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         user.setEmail(req.getEmail());
+        user.setFirstname(req.getFirstname());
+        user.setLastname(req.getLastname());
+        user.setPhone(req.getPhone());
+        user.setCity(req.getCity());
         user.setRole(req.getRole());
         if (req.getPassword() != null && !req.getPassword().isBlank())
             user.setPassword(passwordEncoder.encode(req.getPassword()));
@@ -127,6 +135,10 @@ public class UserService {
         dto.setId(u.getId());
         dto.setUsername(u.getUsername());
         dto.setEmail(u.getEmail());
+        dto.setFirstname(u.getFirstname());
+        dto.setLastname(u.getLastname());
+        dto.setPhone(u.getPhone());
+        dto.setCity(u.getCity());
         dto.setRole(u.getRole());
         dto.setCreatedAt(u.getCreatedAt());
         dto.setUpdatedAt(u.getUpdatedAt());
