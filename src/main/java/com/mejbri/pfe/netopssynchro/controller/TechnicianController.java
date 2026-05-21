@@ -113,7 +113,6 @@ public class TechnicianController {
         DemandePhoto photo = DemandePhoto.builder()
                 .demande(d)
                 .filename(filename)
-                .storagePath(dest.toString())
                 .uploadedBy(auth.getName())
                 .build();
         photoRepo.save(photo);
@@ -131,18 +130,6 @@ public class TechnicianController {
                         "uploadedBy", p.getUploadedBy(),
                         "uploadedAt", p.getUploadedAt().toString()
                 )).toList());
-    }
-
-    @GetMapping("/photos/{photoId}/download")
-    public ResponseEntity<Resource> downloadPhoto(@PathVariable Long photoId, Authentication auth) throws IOException {
-        DemandePhoto photo = photoRepo.findById(photoId)
-                .orElseThrow(() -> new RuntimeException("Photo not found"));
-        Path path = Paths.get(photo.getStoragePath());
-        Resource resource = new UrlResource(path.toUri());
-        return ResponseEntity.ok()
-                .contentType(MediaType.IMAGE_JPEG)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + photo.getFilename() + "\"")
-                .body(resource);
     }
 
     // ── Location ──────────────────────────────────────────

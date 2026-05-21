@@ -33,6 +33,12 @@ public class User {
     @Enumerated(EnumType.STRING)
     private City city;
 
+    @Lob
+    @Column(name = "avatar_data", columnDefinition = "LONGBLOB")
+    private byte[] avatarData;
+
+    private String avatarContentType;
+
     @Column(length = 512)
     private String fcmToken;
 

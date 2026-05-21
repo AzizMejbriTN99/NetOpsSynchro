@@ -68,10 +68,10 @@ public class AIAssignmentService {
                     .autoApplied(false)
                     .build();
 
-        // 2. Collect available (not IN_PROGRESS) technicians
-        Set<Long> busyTechnicianIds = demandeRepo.findByStatus(DemandeStatus.IN_PROGRESS)
-                .stream()
+        Set<Long> busyTechnicianIds = demandeRepo.findAll().stream()
                 .filter(d -> d.getTechnician() != null)
+                .filter(d -> d.getStatus() == DemandeStatus.NEW
+                        || d.getStatus() == DemandeStatus.IN_PROGRESS)
                 .map(d -> d.getTechnician().getId())
                 .collect(Collectors.toSet());
 

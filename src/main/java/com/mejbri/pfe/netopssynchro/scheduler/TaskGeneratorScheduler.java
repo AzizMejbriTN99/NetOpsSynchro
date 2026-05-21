@@ -22,6 +22,13 @@ public class TaskGeneratorScheduler {
 
     private static final Random RNG = new Random();
 
+    /**
+     * Hard cap: the scheduler will not create more tasks while the total
+     * number of NEW demandes (assigned or not) is at or above this value.
+     * This is the global pool ceiling regardless of assignment state.
+     */
+    private static final long MAX_NEW_TASKS = 200;
+
     // ── Task data pools ───────────────────────────────────────────────────────
 
     private static final String[][] TEMPLATES = {
@@ -63,37 +70,34 @@ public class TaskGeneratorScheduler {
 
     // ── Scheduler ─────────────────────────────────────────────────────────────
 
-    /**
-     * Generates one random demande every 2 minutes across all cities that have
-     * registered AppLocation bounds in the database.
-     *
-     * Override the interval in application.properties:
-     *   task.generator.cron=0 *\/2 * * * *
-     */
-    private static final long MAX_UNASSIGNED_NEW = 50;
-
     @Scheduled(cron = "${task.generator.cron:0 */2 * * * *}")
     public void generate() {
         try {
-            long unassignedNew = demandeRepository
-                    .countByStatusAndTechnicianIsNull(DemandeStatus.NEW);
-            if (unassignedNew >= MAX_UNASSIGNED_NEW) {
-                log.info("Task generator paused — {} unassigned NEW demandes already queued.", unassignedNew);
+            // Count ALL demandes in NEW status — assigned or not.
+            // This is the correct ceiling: once 200 NEW tasks exist in the system
+            // (even if some are already assigned but not yet started), stop generating.
+            long totalNew = demandeRepository.countByStatus(DemandeStatus.NEW);
+
+            if (totalNew >= MAX_NEW_TASKS) {
+                log.debug("Task generator paused — {} NEW demandes in system (cap: {}).",
+                        totalNew, MAX_NEW_TASKS);
                 return;
             }
+
             Demande demande = buildDemande();
             demandeRepository.save(demande);
-            log.info("Auto-generated task [{}] in city {}  →  {}",
-                    demande.getId(), cityOf(demande), demande.getTitle());
+            log.info("Auto-generated task #{} in {} → \"{}\"  [{}/{}]",
+                    demande.getId(), cityOf(demande), demande.getTitle(),
+                    totalNew + 1, MAX_NEW_TASKS);
+
         } catch (Exception e) {
-            log.error("Task generator failed: {}", e.getMessage());
+            log.error("Task generator failed: {}", e.getMessage(), e);
         }
     }
 
     // ── Builder ───────────────────────────────────────────────────────────────
 
     private Demande buildDemande() {
-        // Pick a random city that has bounds registered in the DB
         List<AppLocation> centers = locationRepository.findByTypeAndActiveTrue(LocationType.CITY_CENTER);
         AppLocation center = centers.isEmpty()
                 ? fallbackCenter()
@@ -104,7 +108,6 @@ public class TaskGeneratorScheduler {
         String   client  = CLIENTS[RNG.nextInt(CLIENTS.length)] + " " + cityLabel(center.getCity());
         String   contact = CONTACTS[RNG.nextInt(CONTACTS.length)];
 
-        // Find a system/admin user to set as creator (use first admin found, or null)
         User creator = userRepository.findAll().stream()
                 .filter(u -> u.getRole() == Role.ADMIN && u.isEnabled())
                 .findFirst()
@@ -126,28 +129,21 @@ public class TaskGeneratorScheduler {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    /**
-     * Adds a small random offset to the city center coordinates so tasks
-     * don't all land on exactly the same point.
-     * Spread radius ≈ ±3 km.
-     */
     private double[] randomCoords(AppLocation center) {
-        double spread = 0.025; // ~2.5 km in degrees
-        double lat = center.getLatitude() + (RNG.nextDouble() - 0.5) * spread;
+        double spread = 0.025;
+        double lat = center.getLatitude()  + (RNG.nextDouble() - 0.5) * spread;
         double lon = center.getLongitude() + (RNG.nextDouble() - 0.5) * spread;
         return new double[]{lat, lon};
     }
 
     private DemandePriority randomPriority() {
-        // Weighted: LOW 20%, MEDIUM 40%, HIGH 30%, CRITICAL 10%
         int r = RNG.nextInt(100);
-        if (r < 20)  return DemandePriority.LOW;
-        if (r < 60)  return DemandePriority.MEDIUM;
-        if (r < 90)  return DemandePriority.HIGH;
+        if (r < 20) return DemandePriority.LOW;
+        if (r < 60) return DemandePriority.MEDIUM;
+        if (r < 90) return DemandePriority.HIGH;
         return DemandePriority.CRITICAL;
     }
 
-    /** Hard-coded fallback if no AppLocation rows exist yet in the DB. */
     private AppLocation fallbackCenter() {
         AppLocation loc = new AppLocation();
         loc.setCity(City.TUNIS);

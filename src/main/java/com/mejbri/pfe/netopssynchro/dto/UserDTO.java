@@ -23,6 +23,7 @@ public class UserDTO {
     private String phone;
     private City city;
     private Role role;
+    private boolean hasAvatar;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private boolean enabled;

@@ -1,5 +1,6 @@
 package com.mejbri.pfe.netopssynchro.service;
 
+import com.mejbri.pfe.netopssynchro.dto.ProfileResponse;
 import com.mejbri.pfe.netopssynchro.dto.ProfileUpdateRequest;
 import com.mejbri.pfe.netopssynchro.dto.RegisterRequest;
 import com.mejbri.pfe.netopssynchro.dto.UserDTO;
@@ -11,7 +12,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -65,53 +65,76 @@ public class UserService {
     }
 
 
-    public Map<String, String> updateProfile(
-            String username,
-            ProfileUpdateRequest request
-    ) {
+    public ProfileResponse getProfile(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return toProfileResponse(user, null);
+    }
 
-        User user = userRepository
-                .findByUsername(username)
+    public ProfileResponse updateProfile(String username, ProfileUpdateRequest request) {
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (request.getEmail() != null &&
-                !request.getEmail().isBlank()) {
+        if (request.getFirstname() != null && !request.getFirstname().isBlank())
+            user.setFirstname(request.getFirstname());
 
+        if (request.getLastname() != null && !request.getLastname().isBlank())
+            user.setLastname(request.getLastname());
+
+        if (request.getEmail() != null && !request.getEmail().isBlank())
             user.setEmail(request.getEmail());
-        }
 
-        if (request.getPhone() != null &&
-                !request.getPhone().isBlank()) {
-
+        if (request.getPhone() != null && !request.getPhone().isBlank())
             user.setPhone(request.getPhone());
-        }
 
-        boolean wantsPasswordChange =
-                request.getNewPassword() != null &&
-                        !request.getNewPassword().isBlank();
+        boolean wantsPasswordChange = request.getNewPassword() != null
+                && !request.getNewPassword().isBlank();
 
         if (wantsPasswordChange) {
-
-            if (request.getCurrentPassword() == null ||
-                    !passwordEncoder.matches(
-                            request.getCurrentPassword(),
-                            user.getPassword()
-                    )) {
-
+            if (request.getCurrentPassword() == null
+                    || !passwordEncoder.matches(request.getCurrentPassword(), user.getPassword()))
                 throw new RuntimeException("Current password is incorrect");
-            }
-
-            user.setPassword(
-                    passwordEncoder.encode(request.getNewPassword())
-            );
+            user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         }
 
-        userRepository.save(user);
+        return toProfileResponse(userRepository.save(user), "Profile updated successfully");
+    }
 
-        return Map.of(
-                "message",
-                "Profile updated successfully"
-        );
+    public ProfileResponse uploadAvatar(String username, byte[] data, String contentType) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setAvatarData(data);
+        user.setAvatarContentType(contentType);
+        return toProfileResponse(userRepository.save(user), "Avatar updated successfully");
+    }
+
+    public ProfileResponse deleteAvatar(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setAvatarData(null);
+        user.setAvatarContentType(null);
+        return toProfileResponse(userRepository.save(user), "Avatar removed");
+    }
+
+    public User getRawUser(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    private ProfileResponse toProfileResponse(User u, String message) {
+        return ProfileResponse.builder()
+                .id(u.getId())
+                .username(u.getUsername())
+                .email(u.getEmail())
+                .firstname(u.getFirstname())
+                .lastname(u.getLastname())
+                .phone(u.getPhone())
+                .city(u.getCity())
+                .role(u.getRole())
+                .hasAvatar(u.getAvatarData() != null && u.getAvatarData().length > 0)
+                .createdAt(u.getCreatedAt())
+                .message(message)
+                .build();
     }
 
     public void deleteUser(Long id) {
@@ -140,6 +163,7 @@ public class UserService {
         dto.setPhone(u.getPhone());
         dto.setCity(u.getCity());
         dto.setRole(u.getRole());
+        dto.setHasAvatar(u.getAvatarData() != null && u.getAvatarData().length > 0);
         dto.setCreatedAt(u.getCreatedAt());
         dto.setUpdatedAt(u.getUpdatedAt());
         dto.setEnabled(u.isEnabled());

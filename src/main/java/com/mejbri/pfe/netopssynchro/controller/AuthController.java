@@ -4,7 +4,6 @@ import com.mejbri.pfe.netopssynchro.config.JwtService;
 import com.mejbri.pfe.netopssynchro.dto.LoginRequest;
 import com.mejbri.pfe.netopssynchro.dto.LoginResponse;
 import com.mejbri.pfe.netopssynchro.dto.ProfileUpdateRequest;
-import com.mejbri.pfe.netopssynchro.dto.RegisterRequest;
 import com.mejbri.pfe.netopssynchro.entity.LoginEvent;
 import com.mejbri.pfe.netopssynchro.entity.User;
 import com.mejbri.pfe.netopssynchro.repository.LoginEventRepository;
