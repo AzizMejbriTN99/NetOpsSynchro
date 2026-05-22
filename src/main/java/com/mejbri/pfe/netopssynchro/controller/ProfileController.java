@@ -8,32 +8,34 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import java.io.IOException;
 
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/profile")
+@PreAuthorize("hasAnyRole('ADMIN','CONSULTANT','TECHNICIAN')")
 @RequiredArgsConstructor
 public class ProfileController {
 
     private final UserService userService;
 
-    @GetMapping("/profile")
+    @GetMapping
     public ResponseEntity<ProfileResponse> getProfile(Authentication authentication) {
         return ResponseEntity.ok(userService.getProfile(authentication.getName()));
     }
 
-    @PutMapping("/profile")
+    @PutMapping
     public ResponseEntity<ProfileResponse> updateProfile(
             @RequestBody ProfileUpdateRequest request,
             Authentication authentication) {
         return ResponseEntity.ok(userService.updateProfile(authentication.getName(), request));
     }
 
-    @PostMapping(value = "/profile/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProfileResponse> uploadAvatar(
             @RequestParam("file") MultipartFile file,
             Authentication authentication) throws IOException {
@@ -46,7 +48,7 @@ public class ProfileController {
                 userService.uploadAvatar(authentication.getName(), file.getBytes(), ct));
     }
 
-    @GetMapping("/profile/avatar")
+    @GetMapping("/avatar")
     public ResponseEntity<byte[]> getAvatar(Authentication authentication) {
         User user = userService.getRawUser(authentication.getName());
         if (user.getAvatarData() == null || user.getAvatarData().length == 0)
@@ -61,9 +63,8 @@ public class ProfileController {
                 .body(user.getAvatarData());
     }
 
-    @DeleteMapping("/profile/avatar")
+    @DeleteMapping("/avatar")
     public ResponseEntity<ProfileResponse> deleteAvatar(Authentication authentication) {
         return ResponseEntity.ok(userService.deleteAvatar(authentication.getName()));
     }
-
 }
