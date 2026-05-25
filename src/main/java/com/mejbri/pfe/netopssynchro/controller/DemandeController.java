@@ -1,11 +1,13 @@
 package com.mejbri.pfe.netopssynchro.controller;
 
+import com.mejbri.pfe.netopssynchro.dto.DemandeActionDTO;
 import com.mejbri.pfe.netopssynchro.dto.DemandeDTO;
 import com.mejbri.pfe.netopssynchro.dto.DemandeRequest;
 import com.mejbri.pfe.netopssynchro.dto.UserDTO;
 import com.mejbri.pfe.netopssynchro.entity.DemandePhoto;
 import com.mejbri.pfe.netopssynchro.entity.DemandeStatus;
 import com.mejbri.pfe.netopssynchro.repository.DemandePhotoRepository;
+import com.mejbri.pfe.netopssynchro.service.DemandeActionService;
 import com.mejbri.pfe.netopssynchro.service.DemandeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -31,8 +33,7 @@ public class DemandeController {
 
     private final DemandeService         demandeService;
     private final DemandePhotoRepository photoRepository;
-
-    // ── Demande CRUD ──────────────────────────────────────────────────────────
+    private final DemandeActionService actionService;
 
     @GetMapping("/demandes")
     public ResponseEntity<Map<String, Object>> getDemandes(
@@ -70,6 +71,11 @@ public class DemandeController {
         return ResponseEntity.ok(Map.of("message", "Demande deleted"));
     }
 
+    @GetMapping("/demandes/{id}/timeline")
+    public ResponseEntity<List<DemandeActionDTO>> getTimeline(@PathVariable Long id) {
+        return ResponseEntity.ok(actionService.getTimeline(id));
+    }
+
     @GetMapping("/technicians")
     public ResponseEntity<List<UserDTO>> getTechnicians(@RequestParam(required = false) String city) {
         return ResponseEntity.ok(demandeService.getTechniciansByCity(city));
@@ -80,9 +86,6 @@ public class DemandeController {
         return ResponseEntity.ok(demandeService.generateRandom(city, auth));
     }
 
-    // ── Photo endpoints ───────────────────────────────────────────────────────
-
-    /** List metadata for all attachments on a demande (no binary data). */
     @GetMapping("/demandes/{id}/photos")
     public ResponseEntity<List<Map<String, Object>>> getPhotos(@PathVariable Long id) {
         List<Map<String, Object>> photos = photoRepository.findByDemandeId(id)

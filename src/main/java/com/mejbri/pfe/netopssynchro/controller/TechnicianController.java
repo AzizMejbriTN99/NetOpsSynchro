@@ -113,8 +113,11 @@ public class TechnicianController {
         DemandePhoto photo = DemandePhoto.builder()
                 .demande(d)
                 .filename(filename)
+                .contentType(file.getContentType())
+                .data(file.getBytes())
                 .uploadedBy(auth.getName())
                 .build();
+
         photoRepo.save(photo);
 
         return ResponseEntity.ok(Map.of("filename", filename, "photoId", photo.getId()));
