@@ -34,9 +34,6 @@ public class TechnicianController {
     private final DemandeActionService     actionService;
     private final NotificationService      notificationService;
 
-    @Value("${file.upload.path}")
-    private String uploadPath;
-
     // ── My assigned demandes ──────────────────────────────
     @GetMapping("/demandes")
     public ResponseEntity<List<DemandeDTO>> getMyDemandes(Authentication auth) {
@@ -103,12 +100,7 @@ public class TechnicianController {
             Authentication auth) throws IOException {
         Demande d = findAndVerify(id, auth);
 
-        Path dir = Paths.get(uploadPath, String.valueOf(id));
-        Files.createDirectories(dir);
-
         String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        Path dest = dir.resolve(filename);
-        Files.copy(file.getInputStream(), dest, StandardCopyOption.REPLACE_EXISTING);
 
         DemandePhoto photo = DemandePhoto.builder()
                 .demande(d)
