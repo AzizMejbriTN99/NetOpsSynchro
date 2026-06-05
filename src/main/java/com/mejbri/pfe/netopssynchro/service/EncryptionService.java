@@ -20,6 +20,7 @@ public class EncryptionService {
     }
 
     public String encrypt(String value) {
+        if (value == null) return null;
         try {
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
             cipher.init(Cipher.ENCRYPT_MODE, getKey());
@@ -31,6 +32,7 @@ public class EncryptionService {
     }
 
     public String decrypt(String encrypted) {
+        if (encrypted == null) return null;
         try {
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, getKey());

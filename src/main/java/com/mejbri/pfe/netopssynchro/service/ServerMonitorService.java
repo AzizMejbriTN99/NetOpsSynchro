@@ -11,6 +11,9 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.*;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ServerMonitorService {
@@ -29,6 +32,20 @@ public class ServerMonitorService {
     @Scheduled(fixedDelay = 30000)
     public void refreshAll() {
         serverRepo.findByActiveTrue().forEach(this::refreshServer);
+
+        // Also check databases that have no server attached
+        dbRepo.findAll().stream()
+                .filter(db -> db.getServer() == null)
+                .forEach(db -> {
+                    boolean connected = testDbConnection(db);
+                    databaseStatus.put(db.getId(), DatabaseStatusDTO.builder()
+                            .databaseId(db.getId())
+                            .name(db.getName())
+                            .type(db.getType())
+                            .serverId(null)
+                            .connected(connected)
+                            .build());
+                });
     }
 
     private void refreshServer(ManagedServer server) {
@@ -92,24 +109,52 @@ public class ServerMonitorService {
 
     private boolean testDbConnection(ManagedDatabase db) {
         try {
-            String url  = encryptionService.decrypt(db.getEncryptedConnectionString());
-            String user = db.getDbUsername();
-            String pass = encryptionService.decrypt(db.getEncryptedDbPassword());
+            String rawUrl = encryptionService.decrypt(db.getEncryptedConnectionString());
+            String user   = db.getDbUsername();
+            String pass   = encryptionService.decrypt(db.getEncryptedDbPassword());
+
+            // Auto-construct proper JDBC URL if user entered a bare host:port/db string
+            String url = buildJdbcUrl(db.getType(), rawUrl);
+
             String driver = switch (db.getType()) {
                 case MYSQL      -> "com.mysql.cj.jdbc.Driver";
                 case POSTGRESQL -> "org.postgresql.Driver";
                 case ORACLE     -> "oracle.jdbc.OracleDriver";
                 case MSSQL      -> "com.microsoft.sqlserver.jdbc.SQLServerDriver";
-                case MONGODB    -> null; // handled differently
+                case MONGODB    -> null;
             };
-            if (driver == null) return false;
+            if (driver == null) {
+                log.debug("No JDBC driver for type {} ({})", db.getType(), db.getName());
+                return false;
+            }
+
             Class.forName(driver);
             try (Connection c = DriverManager.getConnection(url, user, pass)) {
-                return c.isValid(3);
+                boolean ok = c.isValid(3);
+                log.debug("DB [{}] connection test: {}", db.getName(), ok ? "OK" : "INVALID");
+                return ok;
             }
         } catch (Exception e) {
+            log.warn("DB [{}] connection test failed: {}", db.getName(), e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * Accepts bare host:port/db strings and turns them into proper JDBC URLs.
+     * If the string already starts with "jdbc:" it is returned as-is.
+     */
+    private String buildJdbcUrl(DatabaseType type, String raw) {
+        if (raw == null) return "";
+        if (raw.startsWith("jdbc:")) return raw;
+
+        return switch (type) {
+            case MYSQL      -> "jdbc:mysql://"      + raw;
+            case POSTGRESQL -> "jdbc:postgresql://" + raw;
+            case ORACLE     -> "jdbc:oracle:thin:@" + raw;
+            case MSSQL      -> "jdbc:sqlserver://"  + raw;
+            default         -> raw;
+        };
     }
 
     // ── Public accessors ──

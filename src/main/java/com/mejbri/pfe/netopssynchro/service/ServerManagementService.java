@@ -38,8 +38,10 @@ public class ServerManagementService {
 
     // ── Tomcat ──
     public TomcatInstanceDTO addTomcat(TomcatInstanceDTO req) {
+        if (req.getServerId() == null)
+            throw new RuntimeException("serverId is required to add a Tomcat instance");
         ManagedServer server = serverRepo.findById(req.getServerId())
-                .orElseThrow(() -> new RuntimeException("Server not found"));
+                .orElseThrow(() -> new RuntimeException("Server not found: " + req.getServerId()));
         TomcatInstance tc = TomcatInstance.builder()
                 .name(req.getName())
                 .catalinaHome(req.getCatalinaHome())
@@ -56,8 +58,11 @@ public class ServerManagementService {
 
     // ── Databases ──
     public ManagedDatabaseDTO addDatabase(ManagedDatabaseDTO req) {
-        ManagedServer server = serverRepo.findById(req.getServerId())
-                .orElseThrow(() -> new RuntimeException("Server not found"));
+        ManagedServer server = null;
+        if (req.getServerId() != null) {
+            server = serverRepo.findById(req.getServerId())
+                    .orElseThrow(() -> new RuntimeException("Server not found: " + req.getServerId()));
+        }
         ManagedDatabase db = ManagedDatabase.builder()
                 .name(req.getName())
                 .type(req.getType())
@@ -109,4 +114,5 @@ public class ServerManagementService {
         dto.setServerId(db.getServer() != null ? db.getServer().getId() : null);
         return dto;
     }
+
 }
