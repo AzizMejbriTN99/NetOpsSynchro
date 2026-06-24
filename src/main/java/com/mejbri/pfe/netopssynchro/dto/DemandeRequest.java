@@ -1,5 +1,6 @@
 package com.mejbri.pfe.netopssynchro.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.mejbri.pfe.netopssynchro.entity.DemandePriority;
 import com.mejbri.pfe.netopssynchro.entity.DemandeStatus;
 import lombok.AllArgsConstructor;
@@ -7,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 @NoArgsConstructor
 @AllArgsConstructor
 public class DemandeRequest {

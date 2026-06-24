@@ -16,6 +16,8 @@ public class AIAssignmentScheduler {
 
     @Scheduled(cron = "${ai.assignment.cron:0 */1 * * * *}")
     public void runAutoAssignment() {
+
+        log.info("[AI Scheduler] Triggered");
         try {
             AssignmentResultDTO result = aiAssignmentService.computeAndOptionallyApply(true);
 
